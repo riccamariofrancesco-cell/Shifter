@@ -16,8 +16,8 @@
     { "src": "/(.*)", "dest": "/frontend/$1" }
   ],
   "env": {
-    "DATABASE_URL": "@db_url",
-    "JWT_SECRET": "@jwt_secret",
+    "DATABASE_URL": "@DATABASE_URL",
+    "JWT_SECRET": "@JWT_SECRET",
     "NODE_ENV": "production"
   }
 }
