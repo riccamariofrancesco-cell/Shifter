@@ -15,6 +15,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sessions  Session[]
+  accounts  Account[]
+  investments Investment[]
+  cryptos   Crypto[]
 }
 
 model Session {
@@ -24,4 +27,37 @@ model Session {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   expiresAt DateTime
+}
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  sourceName String
+  type       String   // checking, savings, debit_card
+  amount     Float
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Investment {
+  id        Int      @id @default(autoincrement())
+  sourceName String
+  type       String   // stocks, etfs, funds, bonds
+  amount     Float
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Crypto {
+  id        Int      @id @default(autoincrement())
+  sourceName String
+  type       String   // BTC, ETH, etc.
+  amount     Float
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

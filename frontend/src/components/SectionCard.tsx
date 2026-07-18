@@ -1,146 +1,71 @@
-import React, { useState } from 'react';
-import InputField from './InputField';
-import Button from './Button';
-
-interface Asset {
-  id: number;
-  sourceName: string;
-  amount: number;
-  currency: string;
-}
+import React from 'react';
 
 interface SectionCardProps {
   title: string;
-  items: Asset[];
-  onAddAsset: () => void;
-  currency?: string;
+  subtitle: string;
+  metricValue: number;
+  metricSuffix: string;
+  trend: 'up' | 'down' | 'neutral';
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 const SectionCard: React.FC<SectionCardProps> = ({
   title,
-  items,
-  onAddAsset,
-  currency = 'EUR',
+  subtitle,
+  metricValue,
+  metricSuffix,
+  trend,
+  onEdit,
+  onDelete
 }) => {
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editSource, setEditSource] = useState('');
-  const [editAmount, setEditAmount] = useState('');
-
-  const handleSave = async (id: number) => {
-    // In a real app, you would call an API to update the asset
-    console.log(`Saving asset ${id}:`, { sourceName: editSource, amount: parseFloat(editAmount) });
-    setEditingId(null);
-    // Reset edit state
-    setEditSource('');
-    setEditAmount('');
+  const trendClasses = {
+    up: 'text-green-600',
+    down: 'text-red-600',
+    neutral: 'text-gray-500'
   };
-
-  const handleDelete = async (id: number) => {
-    // In a real app, you would call an API to delete the asset
-    console.log(`Deleting asset ${id}`);
-  };
-
-  const total = items.reduce((sum, item) => sum + item.amount, 0);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
       <div className="flex justify-between items-start mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
-        <button
-          onClick={onAddAsset}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-        >
-          Aggiungi Fonte
-        </button>
-      </div>
-
-      {/* Total */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-xl">
-        <p className="text-lg font-semibold text-blue-800">
-          Totale {title.toLowerCase()}: {total.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })} {currency}
-        </p>
-      </div>
-
-      {/* Items List */}
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center p-4 bg-gray-50 rounded-xl"
+        <div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-1">{title}</h3>
+          <p className="text-sm text-gray-500">{subtitle}</p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={onEdit}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Modifica"
           >
-            {!editingId || editingId !== item.id ? (
-              <>
-                <span className="flex-1 text-gray-700">{item.sourceName}</span>
-                <span className="text-gray-600">{item.amount.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} {item.currency}</span>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setEditingId(item.id);
-                      setEditSource(item.sourceName);
-                      setEditAmount(item.amount.toString());
-                    }}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    Modifica
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Elimina
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <InputField
-                  value={editSource}
-                  onChange={(e) => setEditSource(e.target.value)}
-                  placeholder="Nome fonte"
-                  className="flex-1 mr-2"
-                />
-                <InputField
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
-                  placeholder="Importo"
-                  type="number"
-                  className="w-24 mr-2"
-                />
-                <Button
-                  onClick={() => handleSave(item.id)}
-                  variant="success"
-                  size="sm"
-                >
-                  Salva
-                </Button>
-                <Button
-                  onClick={() => {
-                    setEditingId(null);
-                    setEditSource('');
-                    setEditAmount('');
-                  }}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Annulla
-                </Button>
-              </>
-            )}
-          </div>
-        ))}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 hover:text-gray-900" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+            title="Elimina"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 hover:text-red-900" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.38l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 01-2 0V8zm5-1a1 1 0 000 2v6a1 1 0 000 2h2a1 1 0 000-2v-6a1 1 0 000-2h-2zm4-1a1 1 0 010 2H7a1 1 0 010-2h2z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-        {/* Empty state */}
-        {items.length === 0 && (
-          <p className="text-gray-500 text-center py-8">
-            Nessuna fonte aggiunta. Clicca su "Aggiungi Fonte" per iniziare.
-          </p>
-        )}
+      <div className="text-right">
+        <div className="text-3xl font-bold text-gray-900">
+          {metricValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{metricSuffix}
+        </div>
+        <div className={`flex items-center mt-2 ${trendClasses[trend]}`}>
+          <span className="mr-1">
+            {trend === 'up' ? '▲' : trend === 'down' ? '▼' : '→'}
+          </span>
+          <span className="text-sm font-medium">
+            {trend === 'up' ? '+2.4%' : trend === 'down' ? '-1.2%' : '→ 0.0%'}
+          </span>
+        </div>
       </div>
     </div>
   );

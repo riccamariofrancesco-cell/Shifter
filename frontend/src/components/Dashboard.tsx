@@ -4,7 +4,11 @@ import { useAuth } from '../hooks/useAuth';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import SectionCard from './SectionCard';
-import './Dashboard.css'; // We'll create this for any additional styles
+import { accountsAPI, investmentsAPI, cryptoAPI } from '../services/api';
+import AddAccount from './AddAccount';
+import AddInvestment from './AddInvestment';
+import AddCrypto from './AddCrypto';
+import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -13,23 +17,43 @@ const Dashboard: React.FC = () => {
   const [accounts, setAccounts] = useState<Array<{ id: number; sourceName: string; type: string; amount: number }>>([]);
   const [investments, setInvestments] = useState<Array<{ id: number; sourceName: string; type: string; amount: number }>>([]);
   const [crypto, setCrypto] = useState<Array<{ id: number; sourceName: string; type: string; amount: number }>>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const [showAddInvestmentModal, setShowAddInvestmentModal] = useState(false);
+  const [showAddCryptoModal, setShowAddCryptoModal] = useState(false);
 
-  // Mock data fetching - in real app, use useWealth hook
+  // Fetch data for all sections
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch accounts
+      const accountsResponse = await accountsAPI.getAccounts();
+      setAccounts(accountsResponse.data.accounts || []);
+
+      // Fetch investments
+      const investmentsResponse = await investmentsAPI.getInvestments();
+      setInvestments(investmentsResponse.data.investments || []);
+
+      // Fetch crypto
+      const cryptoResponse = await cryptoAPI.getCryptos();
+      setCrypto(cryptoResponse.data.cryptos || []);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.response?.data?.error || 'Failed to load data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data when component mounts or when user changes
   useEffect(() => {
-    // Simulate fetching user's assets
-    setAccounts([
-      { id: 1, sourceName: 'Conto Intesa', type: 'checking', amount: 5420.00 },
-      { id: 2, sourceName: 'Conto Revolut', type: 'savings', amount: 1250.50 },
-    ]);
-    setInvestments([
-      { id: 1, sourceName: 'Portfolio Azionario', type: 'stocks', amount: 15420.75 },
-      { id: 2, sourceName: 'Fondo Obbligazionario', type: 'bonds', amount: 8200.00 },
-    ]);
-    setCrypto([
-      { id: 1, sourceName: 'Wallet Bitcoin', type: 'BTC', amount: 0.12 },
-      { id: 2, sourceName: 'Wallet Ethereum', type: 'ETH', amount: 2.5 },
-    ]);
-  }, []);
+    if (user) {
+      fetchAllData();
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -66,27 +90,62 @@ const Dashboard: React.FC = () => {
                   case 'account': return 'Impostazioni Account';
                   default: return 'Dashboard';
                 }
-              })()}
+              })}
             </h1>
             <p className="mt-1 text-gray-600">
               Panoramica del tuo patrimonio totale: <span className="font-semibold text-lg">€{totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </p>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-b-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Caricamento dati...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+              <p>{error}</p>
+            </div>
+          )}
+
           {/* Section Content */}
           <div className="space-y-6">
             {activeSection === 'account' ? (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold mb-4">Impostazioni Account</h2>
-                <p className="text-gray-600">Qui puoi modificare le tue informazioni personali, cambiare password e configurare la sicurezza.</p>
-                {/* In a real app, you would have a form here */}
+                {user ? (
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">ID Utente:</span> {user.id}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Email:</span> {user.email}
+                    </div>
+                    {user.name && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Nome:</span> {user.name}
+                      </div)
+                    }
+                  </div>
+                ) : (
+                  <p className="text-gray-600">Caricamento informazioni utente...</p>
+                )}
+                {/* In a real app, you would have a form here to edit profile and change password */}
               </div>
             ) : (
               <>
                 {/* Action Button */}
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={() => alert(`Aggiungi nuova fonte per ${activeSection}`)}
+                    onClick={() => {
+                      if (activeSection === 'accounts') setShowAddAccountModal(true);
+                      else if (activeSection === 'investments') setShowAddInvestmentModal(true);
+                      else if (activeSection === 'crypto') setShowAddCryptoModal(true);
+                    }}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center"
                   >
                     <span className="mr-2">+</span> Aggiungi Fonte
@@ -133,9 +192,18 @@ const Dashboard: React.FC = () => {
                         <SectionCard
                           key={c.id}
                           title={c.sourceName}
-                          subtitle={`${c.type} • ${(c.amount * 30000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} // Mock BTC price
+                          subtitle={`${c.type} • ${
+                            // Mock price calculation for display purposes
+                            (() => {
+                              switch (c.type) {
+                                case 'BTC': return (c.amount * 60000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                case 'ETH': return (c.amount * 3000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                default: return (c.amount * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              }
+                            })()
+                          } €`}
                           metricValue={c.amount}
-                          metricSuffix=" BTC"
+                          metricSuffix={c.type === 'BTC' || c.type === 'ETH' ? ' BTC' : c.type === 'ADA' || c.type === 'DOT' || c.type === 'LINK' ? ' ' + c.type : ' unità'}
                           trend="up"
                           onEdit={() => alert(`Modifica ${c.sourceName}`)}
                           onDelete={() => alert(`Elimina ${c.sourceName}`)}
@@ -157,6 +225,26 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     </div>
+
+    {/* Modals */}
+    {showAddAccountModal && (
+      <AddAccount
+        onClose={() => setShowAddAccountModal(false)}
+        onAccountAdded={fetchAllData}
+      />
+    )}
+    {showAddInvestmentModal && (
+      <AddInvestment
+        onClose={() => setShowAddInvestmentModal(false)}
+        onInvestmentAdded={fetchAllData}
+      />
+    )}
+    {showAddCryptoModal && (
+      <AddCrypto
+        onClose={() => setShowAddCryptoModal(false)}
+        onCryptoAdded={fetchAllData}
+      />
+    )}
   );
 };
 
