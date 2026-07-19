@@ -1,15 +1,17 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-const Sidebar: React.FC<{ activeSection: string; setActiveSection: (section: string) => void }> = ({
+type SectionId = 'accounts' | 'investments' | 'crypto' | 'account';
+
+const Sidebar: React.FC<{ activeSection: SectionId; setActiveSection: React.Dispatch<React.SetStateAction<SectionId>> }> = ({
   activeSection,
   setActiveSection,
 }) => {
   const sections = [
-    { id: 'accounts', label: 'Conti', icon: '🏦' },
-    { id: 'investments', label: 'Investimenti', icon: '📈' },
-    { id: 'crypto', label: 'Crypto', icon: '₿' },
-    { id: 'account', label: 'Account', icon: '⚙️' },
+    { id: 'accounts' as SectionId, label: 'Conti', icon: '🏦' },
+    { id: 'investments' as SectionId, label: 'Investimenti', icon: '📈' },
+    { id: 'crypto' as SectionId, label: 'Crypto', icon: '₿' },
+    { id: 'account' as SectionId, label: 'Account', icon: '⚙️' },
   ];
 
   return (
