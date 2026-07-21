@@ -1,16 +1,16 @@
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '24h'; // matches cookie expiration
 
-export const generateToken = (payload: object): string => {
+const generateToken = (payload) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-export const verifyToken = (token: string): any => {
+const verifyToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
@@ -18,7 +18,7 @@ export const verifyToken = (token: string): any => {
   }
 };
 
-export const createSession = async (token: string, userId: number): Promise<void> => {
+const createSession = async (token, userId) => {
   // Set expiration to 24 hours from now
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + 24);
@@ -31,3 +31,5 @@ export const createSession = async (token: string, userId: number): Promise<void
     },
   });
 };
+
+module.exports = { generateToken, verifyToken, createSession };
