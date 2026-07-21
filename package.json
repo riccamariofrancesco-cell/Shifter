@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@types/react": "^19.2.17"
+  },
+  "dependencies": {
+    "react-scripts": "^5.0.1"
   }
 }
