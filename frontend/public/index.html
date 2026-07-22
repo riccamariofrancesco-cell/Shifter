@@ -1,17 +1,635 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <title>Shifter</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shifter - Wealth Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#06b6d4',   // cyan-500
+                        secondary: '#10b981', // emerald-500
+                        accent: '#8b5cf6',    // violet-500
+                        dark: '#1e293b',      // slate-800
+                        light: '#f8fafc',     // slate-50
+                        muted: '#64748b',     // slate-500
+                    },
+                    borderRadius: {
+                        lg: '12px',
+                        xl: '16px',
+                        '2xl': '20px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom curve adjustments */
+        .curve-card {
+            border-radius: var(--radius-xl, 16px);
+            background: var(--card-bg, #ffffff);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .curve-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .sidebar {
+            border-radius: var(--radius-2xl, 20px);
+            background: var(--sidebar-bg, #f1f5f9);
+        }
+        .tab-active {
+            background: var(--primary, #06b6d4);
+            color: white;
+            border-radius: var(--radius-lg, 12px);
+        }
+        .input-field {
+            border-radius: var(--radius-lg, 12px);
+            border: 1px solid var(--muted, #64748b);
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary, #06b6d4);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+        }
+        .btn-primary {
+            background: var(--primary, #06b6d4);
+            color: white;
+            border-radius: var(--radius-lg, 12px);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #0891b2; /* cyan-600 */
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-2xl, 20px);
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .no-scroll {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-light text-dark font-sans antialiased" id="body">
+    <!-- Modal Container -->
+    <div id="auth-modal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-content">
+            <div id="auth-tabs" class="flex mb-4">
+                <button id="login-tab" class="tab-active px-4 py-2 text-white flex-1 text-center">Accedi</button>
+                <button id="signup-tab" class="px-4 py-2 text-muted flex-1 text-center">Registrati</button>
+            </div>
+            <form id="auth-form" class="space-y-4">
+                <h2 id="auth-title" class="text-xl font-bold text-center">Accedi al tuo conto</h2>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-muted mb-1">Email</label>
+                    <input type="email" id="email" class="input-field w-full" required placeholder="es. nome@dominio.com">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-muted mb-1">Password</label>
+                    <input type="password" id="password" class="input-field w-full" required placeholder="••••••••">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center text-sm text-muted">
+                        <input type="checkbox" id="remember-me" class="form-checkbox h-4 w-4 text-primary">
+                        <span class="ml-2">Ricordami</span>
+                    </label>
+                    <a href="#" id="forgot-link" class="text-sm text-primary hover:underline">Password dimenticata?</a>
+                </div>
+                <button type="submit" class="btn-primary w-full py-2" id="auth-submit">Accedi</button>
+                <p class="text-sm text-center text-muted">
+                    Non hai un account? <a href="#" id="switch-to-signup" class="text-primary hover:underline">Registrati</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App (hidden until login) -->
+    <div id="app" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl font-bold text-primary">Shifter</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="profile-btn" class="flex items-center space-x-2 text-sm font-medium">
+                        <span class="inline-block h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
+                            U
+                        </span>
+                        <span id="user-name">Utente</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex">
+                <!-- Sidebar Navigation -->
+                <aside class="sidebar w-64 flex-shrink-0">
+                    <nav class="space-y-2 p-4">
+                        <button class="nav-btn w-full flex items-center px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-colors" data-section="accounts">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 18h18"/></svg>
+                            Conti
+                        </button>
+                        <button class="nav-btn w-full flex items-center px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-colors" data-section="investments">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"/></svg>
+                            Investimenti
+                        </button>
+                        <button class="nav-btn w-full flex items-center px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-colors" data-section="crypto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l3-3m0 0l3 3m-3-3v6m0 0L9 12l-3 3"/></svg>
+                            Crypto
+                        </button>
+                        <button class="nav-btn w-full flex items-center px-3 py-2 text-left text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-colors" data-section="account">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 01-8 0M16 11v9a4 4 0 00-8 0v-9M8 13h.01M12 13h.01M16 13h.01M21 12a9 9 0 01-9 9m3 0a3 3 0 00-3-3m0-3a3 3 0 00-3-3m0-3a3 3 0 00-3-3m3 0a3 3 0 013 3h3"/></svg>
+                            Account
+                        </button>
+                    </nav>
+                </aside>
+
+                <!-- Content Area -->
+                <section class="flex-1 overflow-y-auto space-y-6">
+                    <!-- Total Wealth Card -->
+                    <div id="total-wealth-card" class="curve-card p-6">
+                        <div class="flex items-between justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-muted">Patrimonio Totale</h3>
+                            <span id="total-wealth-value" class="text-2xl font-bold text-primary">€ 0,00</span>
+                        </div>
+                        <div class="flex space-x-4 text-sm text-muted">
+                            <div>
+                                <div class="font-medium"> líquido</div>
+                                <div id="liquid-value" class="text-muted">€ 0,00</div>
+                            </div>
+                            <div>
+                                <div class="font-medium"> investimenti</div>
+                                <div id="investment-value" class="text-muted">€ 0,00</div>
+                            </div>
+                            <div>
+                                <div class="font-medium"> crypto</div>
+                                <div id="crypto-value" class="text-muted">€ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs for Sections -->
+                    <div class="flex mb-4 border-b border-muted">
+                        <button id="tab-accounts" class="tab-active px-4 py-2 text-white">Conti</button>
+                        <button id="tab-investments" class="px-4 py-2 text-muted">Investimenti</button>
+                        <button id="tab-crypto" class="px-4 py-2 text-muted">Crypto</button>
+                    </div>
+
+                    <!-- Section Containers -->
+                    <div id="section-accounts" class="space-y-4">
+                        <!-- Add Account Button -->
+                        <button id="add-account-btn" class="btn-primary w-full flex items-center justify-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            Aggiungi Conto
+                        </button>
+                        <!-- Accounts List -->
+                        <div id="accounts-list" class="space-y-3">
+                            <!-- Account items will be injected here -->
+                        </div>
+                    </div>
+
+                    <div id="section-investments" class="space-y-4 hidden">
+                        <button id="add-investment-btn" class="btn-primary w-full flex items-center justify-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            Aggiungi Investimento
+                        </button>
+                        <div id="investments-list" class="space-y-3"></div>
+                    </div>
+
+                    <div id="section-crypto" class="space-y-4 hidden">
+                        <button id="add-crypto-btn" class="btn-primary w-full flex items-center justify-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            Aggiungi Asset Crypto
+                        </button>
+                        <div id="crypto-list" class="space-y-3"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Utility functions
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+        };
+
+        // State
+        let state = {
+            user: null,
+            accounts: [],    // [{id, name, type, balance}]
+            investments: [], // [{id, name, type, balance}]
+            crypto: []       // [{id, name, symbol, quantity, priceUsd, balance}]
+        };
+
+        // DOM Elements
+        const authModal = document.getElementById('auth-modal');
+        const app = document.getElementById('app');
+        const body = document.getElementById('body');
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authSubmit = document.getElementById('auth-submit');
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const switchToSignup = document.getElementById('switch-to-signup');
+        const forgotLink = document.getElementById('forgot-link');
+        const totalWealthValue = document.getElementById('total-wealth-value');
+        const liquidValue = document.getElementById('liquid-value');
+        const investmentValue = document.getElementById('investment-value');
+        const cryptoValue = document.getElementById('crypto-value');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const accountsList = document.getElementById('accounts-list');
+        const addInvestmentBtn = document.getElementById('add-investment-btn');
+        const investmentsList = document.getElementById('investments-list');
+        const addCryptoBtn = document.getElementById('add-crypto-btn');
+        const cryptoList = document.getElementById('crypto-list');
+        const tabs = {
+            accounts: document.getElementById('tab-accounts'),
+            investments: document.getElementById('tab-investments'),
+            crypto: document.getElementById('tab-crypto')
+        };
+        const sections = {
+            accounts: document.getElementById('section-accounts'),
+            investments: document.getElementById('section-investments'),
+            crypto: document.getElementById('section-crypto')
+        };
+
+        // Auth state
+        let isLoginMode = true;
+
+        // Show/Hide modal
+        function showAuthModal() {
+            authModal.classList.remove('hidden');
+            body.classList.add('no-scroll');
+        }
+        function hideAuthModal() {
+            authModal.classList.add('hidden');
+            body.classList.remove('no-scroll');
+        }
+
+        // Toggle auth forms
+        function setAuthMode(isLogin) {
+            isLoginMode = isLogin;
+            if (isLogin) {
+                authTitle.textContent = 'Accedi al tuo conto';
+                authSubmit.textContent = 'Accedi';
+                switchToSignup.textContent = 'Registrati';
+                loginTab.classList.add('tab-active');
+                loginTab.classList.remove('text-muted');
+                loginTab.classList.add('text-white');
+                signupTab.classList.remove('tab-active');
+                signupTab.classList.add('text-muted');
+                signupTab.classList.remove('text-white');
+            } else {
+                authTitle.textContent = 'Crea il tuo conto';
+                authSubmit.textContent = 'Registrati';
+                switchToSignup.textContent = 'Hai già un account? Accedi';
+                loginTab.classList.remove('tab-active');
+                loginTab.classList.add('text-muted');
+                loginTab.classList.remove('text-white');
+                signupTab.classList.add('tab-active');
+                signupTab.classList.remove('text-muted');
+                signupTab.classList.add('text-white');
+            }
+        }
+
+        // Switch between login/signup
+        loginTab.addEventListener('click', () => setAuthMode(true));
+        signupTab.addEventListener('click', () => setAuthMode(false));
+        switchToSignup.addEventListener('click', (e) => {
+            e.preventDefault();
+            setAuthMode(!isLoginMode);
+        });
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Funzione di recupero password non implementata nella demo.');
+        });
+
+        // Auth form submit
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            if (!email || !password) {
+                alert('Inserisci email e password');
+                return;
+            }
+            try {
+                const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // importante per cookie HttpOnly
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Errore durante l\'autenticazione');
+                // Simula utente
+                state.user = { email, name: email.split('@')[0] };
+                document.getElementById('user-name').textContent = state.user.name;
+                hideAuthModal();
+                app.classList.remove('hidden');
+                loadDashboard(); // carica dati iniziali
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        });
+
+        // Mock API calls (replace with real backend)
+        async function fetchAccounts() {
+            // Simulazione chiamata API
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve([
+                        { id: 1, name: 'Conto Corrente', type: 'conto', balance: 5420.00 },
+                        { id: 2, name: 'Carta Debito', type: 'carta', balance: 850.00 }
+                    ]);
+                }, 500);
+            });
+        }
+        async function fetchInvestments() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve([
+                        { id: 1, name: 'Portfolio Azionario', type: 'azioni', balance: 12450.75 },
+                        { id: 2, name: 'Fondo Obligazionario', type: 'obbligazioni', balance: 3200.00 }
+                    ]);
+                }, 500);
+            });
+        }
+        async function fetchCrypto() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve([
+                        { id: 1, name: 'Bitcoin', symbol: 'BTC', quantity: 0.15, priceUsd: 28000, balance: 0.15 * 28000 * 0.92 }, // conversion eur approximate
+                        { id: 2, name: 'Ethereum', symbol: 'ETH', quantity: 2.3, priceUsd: 1800, balance: 2.3 * 1800 * 0.92 }
+                    ]);
+                }, 500);
+            });
+        }
+
+        // Calculate totals
+        function calculateTotals() {
+            const liquid = state.accounts.reduce((sum, acc) => sum + acc.balance, 0);
+            const investments = state.investments.reduce((sum, inv) => sum + inv.balance, 0);
+            const crypto = state.crypto.reduce((sum, c) => sum + c.balance, 0);
+            const total = liquid + investments + crypto;
+
+            state.liquidTotal = liquid;
+            state.investmentTotal = investments;
+            state.cryptoTotal = crypto;
+            state.totalWealth = total;
+
+            // Update UI
+            totalWealthValue.textContent = formatCurrency(total);
+            liquidValue.textContent = formatCurrency(liquid);
+            investmentValue.textContent = formatCurrency(investments);
+            cryptoValue.textContent = formatCurrency(crypto);
+        }
+
+        // Render lists
+        function renderAccounts() {
+            accountsList.innerHTML = '';
+            if (state.accounts.length === 0) {
+                accountsList.innerHTML = '<p class="text-muted text-center py-4">Nessun conto aggiunto.</p>';
+                return;
+            }
+            state.accounts.forEach(acc => {
+                const div = document.createElement('div');
+                div.className = 'curve-card p-4 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-medium">${acc.name}</h4>
+                        <p class="text-sm text-muted">${acc.type === 'conto' ? 'Conto corrente' : acc.type === 'carta' ? 'Carta di debito' : acc.type}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold">${formatCurrency(acc.balance)}</p>
+                        <button class="text-sm text-primary hover:underline mt-1" data-id="${acc.id}" data-type="account">Modifica</button>
+                    </div>
+                `;
+                accountsList.appendChild(div);
+            });
+            // attach edit listeners
+            accountsList.querySelectorAll('[data-type="account"]').forEach(btn => {
+                btn.addEventListener('click', editAccount);
+            });
+        }
+        function renderInvestments() {
+            investmentsList.innerHTML = '';
+            if (state.investments.length === 0) {
+                investmentsList.innerHTML = '<p class="text-muted text-center py-4">Nessun investimento aggiunto.</p>';
+                return;
+            }
+            state.investments.forEach(inv => {
+                const div = document.createElement('div');
+                div.className = 'curve-card p-4 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-medium">${inv.name}</h4>
+                        <p class="text-sm text-muted">${inv.type}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold">${formatCurrency(inv.balance)}</p>
+                        <button class="text-sm text-primary hover:underline mt-1" data-id="${inv.id}" data-type="investment">Modifica</button>
+                    </div>
+                `;
+                investmentsList.appendChild(div);
+            });
+            investmentsList.querySelectorAll('[data-type="investment"]').forEach(btn => {
+                btn.addEventListener('click', editInvestment);
+            });
+        }
+        function renderCrypto() {
+            cryptoList.innerHTML = '';
+            if (state.crypto.length === 0) {
+                cryptoList.innerHTML = '<p class="text-muted text-center py-4">Nessun asset crypto aggiunto.</p>';
+                return;
+            }
+            state.crypto.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'curve-card p-4 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-medium">${c.name} (${c.symbol})</h4>
+                        <p class="text-sm text-muted">${c.quantity.toFixed(4)} ${c.symbol} @ €${(c.priceUsd * 0.92).toFixed(2)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold">${formatCurrency(c.balance)}</p>
+                        <button class="text-sm text-primary hover:underline mt-1" data-id="${c.id}" data-type="crypto">Modifica</button>
+                    </div>
+                `;
+                cryptoList.appendChild(div);
+            });
+            cryptoList.querySelectorAll('[data-type="crypto"]').forEach(btn => {
+                btn.addEventListener('click', editCrypto);
+            });
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                // In a real app, questi sarebbero chiamate API autenticate
+                state.accounts = await fetchAccounts();
+                state.investments = await fetchInvestments();
+                state.crypto = await fetchCrypto();
+                calculateTotals();
+                renderAccounts();
+                renderInvestments();
+                renderCrypto();
+            } catch (err) {
+                console.error('Errore caricamento dashboard:', err);
+                alert('Impossibile caricare i dati. Verifica la connessione o riprova più tardi.');
+            }
+        }
+
+        // Section tab switching
+        Object.keys(tabs).forEach(section => {
+            tabs[section].addEventListener('click', () => {
+                // deactivate all tabs
+                Object.values(tabs).forEach(t => t.classList.toggle('tab-active', t === tabs[section]));
+                Object.values(tabs).forEach(t => t.classList.toggle('text-muted', t !== tabs[section]));
+                Object.values(tabs).forEach(t => t.classList.toggle('text-white', t === tabs[section]));
+                // show/hide sections
+                Object.values(sections).forEach(sec => sec.classList.toggle('hidden', sec !== sections[section]));
+                sections[section].classList.remove('hidden');
+            });
+        });
+
+        // Add item modals (simple prompt for demo)
+        function promptAddItem(type) {
+            const name = prompt(`Inserisci il nome del ${type}:`);
+            if (!name) return;
+            const balanceStr = prompt(`Inserisci il saldo iniziale (€):`);
+            const balance = parseFloat(balanceStr);
+            if (isNaN(balance) || balance < 0) {
+                alert('Inserisci un valore numerico valido');
+                return;
+            }
+            const newItem = { id: Date.now(), name, balance };
+            if (type === 'account') {
+                state.accounts.push(newItem);
+            } else if (type === 'investment') {
+                state.investments.push(newItem);
+            } else if (type === 'crypto') {
+                // For crypto ask quantity and price
+                const quantity = prompt(`Inserisci la quantità di ${name}:`);
+                const priceUsd = prompt(`Inserisci il prezzo corrente in USD:`);
+                const q = parseFloat(quantity);
+                const p = parseFloat(priceUsd);
+                if (isNaN(q) || q <= 0 || isNaN(p) || p <= 0) {
+                    alert('Quantità e prezzo devono essere numeri positivi');
+                    return;
+                }
+                const balanceEur = q * p * 0.92; // conversione approssimativa
+                state.crypto.push({ id: Date.now(), name, symbol: name.toUpperCase().slice(0,3), quantity: q, priceUsd: p, balance: balanceEur });
+            }
+            calculateTotals();
+            renderAccounts();
+            renderInvestments();
+            renderCrypto();
+        }
+
+        addAccountBtn.addEventListener('click', () => promptAddItem('account'));
+        addInvestmentBtn.addEventListener('click', () => promptAddItem('investment'));
+        addCryptoBtn.addEventListener('click', () => promptAddItem('crypto'));
+
+        // Edit item (simple prompt)
+        function editAccount(e) {
+            const id = parseInt(e.target.dataset.id);
+            const acc = state.accounts.find(a => a.id === id);
+            if (!acc) return;
+            const newName = prompt('Modifica nome:', acc.name);
+            if (newName === null) return;
+            const newBal = prompt('Modifica saldo (€):', acc.balance);
+            const balance = parseFloat(newBal);
+            if (isNaN(balance) || balance < 0) {
+                alert('Saldo non valido');
+                return;
+            }
+            acc.name = newName;
+            acc.balance = balance;
+            calculateTotals();
+            renderAccounts();
+        }
+        function editInvestment(e) {
+            const id = parseInt(e.target.dataset.id);
+            const inv = state.investments.find(i => i.id === id);
+            if (!inv) return;
+            const newName = prompt('Modifica nome:', inv.name);
+            if (newName === null) return;
+            const newBal = prompt('Modifica saldo (€):', inv.balance);
+            const balance = parseFloat(newBal);
+            if (isNaN(balance) || balance < 0) {
+                alert('Saldo non valido');
+                return;
+            }
+            inv.name = newName;
+            inv.balance = balance;
+            calculateTotals();
+            renderInvestments();
+        }
+        function editCrypto(e) {
+            const id = parseInt(e.target.dataset.id);
+            const c = state.crypto.find(c => c.id === id);
+            if (!c) return;
+            const newName = prompt('Modifica nome:', c.name);
+            if (newName === null) return;
+            const newQty = prompt('Modifica quantità:', c.quantity);
+            const qty = parseFloat(newQty);
+            if (isNaN(qty) || qty <= 0) {
+                alert('Quantità non valida');
+                return;
+            }
+            const newPrice = prompt('Modifica prezzo USD:', c.priceUsd);
+            const price = parseFloat(newPrice);
+            if (isNaN(price) || price <= 0) {
+                alert('Prezzo non valido');
+                return;
+            }
+            c.name = newName;
+            c.quantity = qty;
+            c.priceUsd = price;
+            c.balance = qty * price * 0.92;
+            calculateTotals();
+            renderCrypto();
+        }
+
+        // Profile button placeholder
+        document.getElementById('profile-btn').addEventListener('click', () => {
+            alert('Funzionalità profilo in sviluppo. Nella versione completa qui potrai gestire 2FA, password, ecc.');
+        });
+
+        // Initialize: show auth modal
+        showAuthModal();
+        setAuthMode(true); // default to login
+    </script>
+</body>
 </html>
