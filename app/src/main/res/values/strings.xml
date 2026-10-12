@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shifter</string>
+
+    <string name="latitude_hint">Latitudine (es. 45.4642)</string>
+    <string name="longitude_hint">Longitudine (es. 9.1900)</string>
+    <string name="start">Avvia posizione fittizia</string>
+    <string name="stop">Ferma</string>
+    <string name="open_dev_options">Apri Opzioni sviluppatore</string>
+
+    <string name="status_active">ATTIVA</string>
+    <string name="status_disabled">DISATTIVATA</string>
+    <string name="status_error">ERRORE</string>
+    <string name="status_active_detail">Posizione fittizia in uso: %1$.6f, %2$.6f</string>
+    <string name="status_disabled_detail">Pronta: nessuna posizione fittizia in corso.</string>
+
+    <string name="err_invalid_coordinate">Valore non valido (da -%1$d a %1$d)</string>
+    <string name="err_location_permission">Serve il permesso di posizione per avviare il servizio.</string>
+    <string name="err_not_mock_app">Questa app non è selezionata come app per posizioni fittizie. Vai in Opzioni sviluppatore → \"Seleziona app per posizioni fittizie\" e scegli Shifter.</string>
+    <string name="err_dev_options_off">Le Opzioni sviluppatore non sono attive. Attivale (Impostazioni → Info telefono → tocca 7 volte il numero build), poi scegli Shifter in \"Seleziona app per posizioni fittizie\".</string>
+
+    <string name="notification_channel">Posizione fittizia</string>
+    <string name="notification_title">Posizione fittizia attiva</string>
+    <string name="notification_text">%1$.6f, %2$.6f</string>
+</resources>
