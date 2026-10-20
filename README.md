@@ -20,3 +20,10 @@ Gradle è già incluso. Poi **Run ▶** su un dispositivo/emulatore (minSdk 26).
 - **DISATTIVATA**: l'app è pronta ma nessuna posizione fittizia è in corso.
 - **ERRORE**: es. l'app non è selezionata nelle Opzioni sviluppatore, o le Opzioni sviluppatore
   non sono attive. Il messaggio spiega cosa fare e c'è un pulsante per aprire le impostazioni.
+
+## Versione e download
+Versione corrente: **1.0.0**. L'APK pronto da installare è nella pagina
+[Releases](../../releases) del repository.
+
+## Licenza
+Distribuita con licenza **GNU General Public License v3.0** (vedi il file [LICENSE](LICENSE)).
